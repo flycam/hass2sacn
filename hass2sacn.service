@@ -1,0 +1,16 @@
+[Unit]
+Description=hass2sacn
+After=network.target
+
+[Service]
+Type=simple
+User=nobody
+Group=nobody
+WorkingDirectory=/run/hass2sacn/
+ExecStart=/usr/bin/hass2sacn -config=/etc/hass2sacn.yml
+Restart=on-failure
+RuntimeDirectory=hass2sacn
+RuntimeDirectoryMode=0755
+
+[Install]
+WantedBy=multi-user.target

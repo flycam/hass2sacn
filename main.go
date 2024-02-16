@@ -40,11 +40,12 @@ type mqttconn struct {
 }
 
 type Fixture struct {
-	Name    string `yaml:"name"`
-	Type    string `yaml:"type"`
-	Address int    `yaml:"address"`
-	Value   int
-	Topic   string
+	Name     string `yaml:"name"`
+	Type     string `yaml:"type"`
+	Address  int    `yaml:"address"`
+	Value    int
+	Topic    string
+	MinValue int `yaml:"minValue"`
 }
 
 func main() {
@@ -59,7 +60,8 @@ func main() {
 	// start mqtt connection
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(fmt.Sprintf("tcp://%s:%d", config.Mqtt.Broker, config.Mqtt.Port))
-	opts.SetClientID("mqtt2sACN")
+	opts.SetClientID(config.Identifier)
+
 	// handle username/password here
 	opts.SetDefaultPublishHandler(messagePubHandler)
 	opts.OnConnect = connectHandler
@@ -81,24 +83,26 @@ func main() {
 
 		cmdTopic := f.Topic + "/set"
 		// publish to MQTT
+		client.Publish(f.Topic+"", 1, false, fmt.Sprintf("{\"state\": \"%s\", \"brightness\": %d}", "OFF", f.Value))
 
-		a := fmt.Sprintf("{\"schema\": \"json\", \"brightness\": true, \"name\": \"%s\", \"stat_t\": \"%s\", \"cmd_t\": \"%s\", \"uniq_id\": \"%s\",\"dev\": {\"identifiers\": \"%s\",\"manufacturer\": \"Bawe\",\"model\": \"mqtt2sacn\",\"name\": \"MQTT 2 sACN\",\"sw_version\": \"1.0\"}}", f.Name, f.Topic, cmdTopic, config.Identifier+"-"+sanitzedName, config.Identifier)
+		// Create homeassistant discovery topic for fixture
+		a := fmt.Sprintf("{\"schema\": \"json\", \"brightness\": true, \"name\": \"%s\", \"stat_t\": \"%s\", \"cmd_t\": \"%s\", \"uniq_id\": \"%s\",\"dev\": {\"identifiers\": \"%s\",\"manufacturer\": \"Bawe\",\"model\": \"mqtt2sacn\",\"name\": \"%s\",\"sw_version\": \"1.0\"}}", f.Name, f.Topic, cmdTopic, config.Identifier+"-"+sanitzedName, config.Identifier+"-"+sanitzedName, f.Name)
 		fmt.Println(a)
 		token := client.Publish(config.Mqtt.Prefix+"light/"+config.Name+"/"+sanitzedName+"/config", 0, true, a)
 		token.Wait()
 
+		// subscribe to set topic to receive values
 		token = client.Subscribe(f.Topic+"/set", 1, nil)
 		token.Wait()
 
 		fixtures[cmdTopic] = f
 	}
 
-	//instead of "" you could provide an ip-address that the socket should bind to
+	// create new transmitter bound to bindaddr from config
 	trans, err := sacn.NewTransmitter(config.Bindaddr, [16]byte{1, 2, 3}, config.Name)
 	if err != nil {
 		log.Fatal(err)
 	}
-	//trans.SetPriority(config.Priority)
 
 	//activates the first universe
 	ch, err := trans.Activate(config.Universe)
@@ -108,9 +112,8 @@ func main() {
 	//deactivate the channel on exit
 	defer close(ch)
 
-	//set a unicast destination, and/or use multicast
-	trans.SetMulticast(config.Universe, true) //this specific setup will not multicast on windows,
-	//because no bind address was provided
+	// use multicast
+	trans.SetMulticast(config.Universe, true)
 
 	go sendUniverse(ch)
 	interrupt := <-runChan
@@ -174,7 +177,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 			Universe1[val.Address-1] = byte(val.Value)
 			fmt.Println(Universe1)
 		}
-		client.Publish(val.Topic, 1, false, fmt.Sprintf("{\"state\": \"%s\", \"brightness\": %i}", setCmd.State, val.Value))
+		client.Publish(val.Topic, 1, false, fmt.Sprintf("{\"state\": \"%s\", \"brightness\": %d}", setCmd.State, val.Value))
 	}
 }
 

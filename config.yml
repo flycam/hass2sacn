@@ -1,9 +1,9 @@
 ---
-bindaddr: "45.12.170.119:5568"
-name: "dev-mqtt2sacn"
-identifier: "dev-mqtt2sacn"
+bindaddr: "localhost:5568"
+name: "mqtt2sacn"
+identifier: "mqtt2sacn"
 mqtt:
-  broker: "45.12.170.20"
+  broker: ""
   port: 1883
   username: ""
   password: ""
@@ -12,27 +12,11 @@ mqtt:
 universe: 1
 priority: 50
 fixtures:
-  - name: "Desk Lawo"
-    type: "dimmer"
-    address: 1
-  - name: "Desk Main"
-    type: "dimmer"
-    address: 5
-  - name: "Bed"
-    type: "dimmer"
-    address: 3
-  - name: "Desk CW"
-    type: "dimmer"
-    address: 7
-  - name: "Shelf & Plant"
-    type: "dimmer"
-    address: 9
-  - name: "Window orange"
-    type: "dimmer"
-    address: 17
-  - name: "Wall orange"
+  - name: "Test wall orange"
     type: "dimmer"
     address: 19
-  - name: "Wall white"
+    min_value: 10
+  - name: "Test wall white"
     type: "dimmer"
     address: 21
+    min_value: 10
