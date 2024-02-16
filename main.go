@@ -162,7 +162,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 		setCmd.Brightness = -1
 		json.Unmarshal(msg.Payload(), &setCmd)
 
-		fmt.Sprintln(" %s Set to %i", val.Name, setCmd.Brightness)
+		fmt.Printf(" %s Set to %i", val.Name, setCmd.Brightness)
 		if setCmd.State == "OFF" {
 			Universe1[val.Address-1] = 0x0
 		} else if setCmd.Brightness >= 0 {
